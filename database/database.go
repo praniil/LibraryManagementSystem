@@ -1,17 +1,22 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
-	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"			//the import statement ensures that when program starts, the init() function of the package gets executed and it registers itself as the driver for psql with sql
+	"log"
 	"os"
+
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq" //the import statement ensures that when program starts, the init() function of the package gets executed and it registers itself as the driver for psql with sql
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-func Database() (*sql.DB, error) {
+var Database *gorm.DB
+
+func Database_connection() *gorm.DB {
 	err := godotenv.Load(".env")
 	if err != nil {
-		return nil, fmt.Errorf("Error loading .env file: %w", err)
+		log.Fatal("Error in loading .env file")
 	}
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
@@ -24,16 +29,11 @@ func Database() (*sql.DB, error) {
 		host, port, user, password, dbname)
 
 	// Open a connection to the PostgreSQL database
-	db, err := sql.Open("postgres", psqlInfo)
+	Database, err := gorm.Open(postgres.Open(psqlInfo), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("error connectiong to database: %w", err)
+		fmt.Println(err)
+		log.Fatal()
 	}
-
-	err = db.Ping()
-	if err != nil {
-		return nil, fmt.Errorf("error pinging databse: %w", err)
-	}
-
-	return db, nil
+	return Database
 
 }

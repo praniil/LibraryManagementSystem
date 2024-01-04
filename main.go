@@ -3,15 +3,18 @@ package main
 import (
 	"fmt"
 	"libraryManagementSystem/database"
-	"log"
 )
 
 func main() {
-	db, err := database.Database()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-	fmt.Println("Successfully connected to the postgresql database")
+	db := database.Database_connection()
+	fmt.Println("connected to the databse")
+	defer func() {
+		sqlDB, err := db.DB()
+		if err != nil {
+			panic(err)
+		}
+		defer sqlDB.Close()
 
+		fmt.Println("Database connection closed")
+	}()
 }
