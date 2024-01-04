@@ -3,12 +3,16 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"libraryManagementSystem/database"
 	"libraryManagementSystem/models"
 	"log"
 	"net/http"
-	"libraryManagementSystem/database"
-	"gorm.io/gorm"
 )
+
+type Response struct {
+	ID      int64  `json:"id,omitempty"`
+	Message string `json:"message,omitempty"`
+}
 
 func CreateBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
@@ -24,9 +28,24 @@ func CreateBook(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Unable to decode the request body. %v", err)
 	}
 
+	insertID := insertBook(book)
+
+	res := Response{
+		ID:      insertID,
+		Message: "User created successfully",
+	}
+	json.NewEncoder(w).Encode(res)
+
 }
 
-func insertBook (book models.Book) int64 {
-	db:= database.Database_connection();
-	db.AutoMigrate()
+func insertBook(book models.Book) int64 {
+	db := database.Database_connection()
+	db.AutoMigrate(&models.Book{})
+	result := db.Create(&book)
+	if result.Error != nil {
+		panic(fmt.Sprintf("Failed to execute the query: %v", result.Error))
+	}
+	fmt.Printf("Inserted a single record %v \n", book.ID)
+	return int64(book.ID)
+
 }
