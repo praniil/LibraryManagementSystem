@@ -61,7 +61,7 @@ func GetBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "GET")
 
 	//get the book id from request params
-	params := mux.Vars(r)
+	params := mux.Vars(r) //gets paramaeter from the url
 	// /api/getbook/{id}
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -94,5 +94,32 @@ func getBook(id int64) (models.Book, error) {
 
 	//original format from database {1 University Physics 2000 Conceptual Physics 1982-02-16}
 	//later on encoded to json format while giving response to the user
-
 }
+
+func GetAllBook(w http.ResponseWriter, r *http.Request) {
+	//r *http.Request http.Request struct contains information about an incomming HTTP request from a client, using a pointer to this struct allows the function to access and modify the req data
+	//its like func insert(node *Node)
+	w.Header().Set("Content-type", "application/x-www-form-urlencoded")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET")
+
+	books, err := getAllBooks()
+	if err != nil {
+		log.Fatalf("unable to find books. %v", err)
+	}
+
+	json.NewEncoder(w).Encode(books)
+}
+
+func getAllBooks() ([]models.Book, error) {
+	db := database.Database_connection()
+	var books []models.Book   //{arrays of information of different books}
+	result := db.Find(&books) //retrieves all the information from models.Book table
+
+	if result.Error != nil {
+		log.Fatalf("unable to find books. %v", result.Error)
+	}
+	return books, nil
+}
+
+
