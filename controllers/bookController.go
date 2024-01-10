@@ -74,7 +74,6 @@ func GetBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(book)
-
 }
 
 func getBook(id int64) (models.Book, error) {
@@ -122,4 +121,66 @@ func getAllBooks() ([]models.Book, error) {
 	return books, nil
 }
 
+func UpdateBook(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-type", "application/x-www-form-urlencoded")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "PUT")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
+	var book models.Book
+	err := json.NewDecoder(r.Body).Decode(&book)
+	if err != nil {
+		log.Fatalf("Unable to decode request body. %v", err)
+	}
+
+	updatedRow := updateBook(book.ID, book)
+	msg := fmt.Sprintf("Book updated successfully. Total rows affected: %v", updatedRow)
+	res := Response{
+		ID:      book.ID,
+		Message: msg,
+	}
+	json.NewEncoder(w).Encode(res)
+}
+
+func updateBook(id int64, book models.Book) int64 {
+	db := database.Database_connection()
+
+	result := db.Model(&models.Book{}).Where("id = ?", id).Updates(book) //db operations done in models.Book where id = mentioned
+	if result.Error != nil {
+		log.Fatalf("unable to update books: %v", result.Error)
+	}
+	affectedRows := result.RowsAffected
+	return affectedRows
+}
+
+func DeleteBook(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-type", "application/x-www-form-urlencoded")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "PUT")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		fmt.Println("unable to convert string to int type")
+	}
+
+	deletedRow := deleteRow(int64(id))
+	msg := fmt.Sprintf("Total no of deleted rows: %v", deletedRow)
+	res := Response{
+		ID:      int64(id),
+		Message: msg,
+	}
+	json.NewEncoder(w).Encode(res)
+}
+
+func deleteRow(id int64) int64 {
+	db := database.Database_connection()
+
+	result := db.Delete(&models.Book{}, id)
+	if result.Error != nil {
+		log.Fatalf("failed to delete the book info")
+	}
+	rowsDeleted := result.RowsAffected
+	return rowsDeleted
+}
