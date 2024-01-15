@@ -25,24 +25,47 @@ func CreateStudent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("failed to decode json format to the original format. %v", err)
 	}
-
-	insertId := insertStudent(student)
+	bookId := student.BookId
+	studentId := insertStudent(student, bookId)
+	var msg string
+	if studentId == 0 {
+		msg = "Student not created"
+	} else {
+		msg = "A new Student crested"
+	}
 	res := Response{
-		ID:      insertId,
-		Message: "A new Student crested",
+		ID:      studentId,
+		Message: msg,
 	}
 	json.NewEncoder(w).Encode(res)
 }
 
-func insertStudent(student models.Student) int64 {
+func insertStudent(student models.Student, bookID int64) int64 {
 	db := database.Database_connection()
-	db.AutoMigrate(&models.Student{}, &models.Book{})
-	result := db.Create(&student)
-	if result.Error != nil {
-		log.Fatalf("unable to create a table for students. %v", result.Error)
+	if exists := db.Migrator().HasTable(&models.Book{}); exists {
+		fmt.Println("Table books exists")
+	} else {
+		db.AutoMigrate(&models.Book{}, &models.Student{})
 	}
-	fmt.Println("Student Created with id: ", student.ID)
-	return int64(student.ID)
+	var book models.Book
+	findBook := db.Find(&book, bookID)
+	if findBook.Error != nil {
+		fmt.Println("couldnt find a book with given bookid")
+	}
+	if book.TotalBooks > 0 {
+		book.TotalBooks = book.TotalBooks - 1
+		tx := db.Begin()
+		tx.Model(&models.Book{}).Where("id = ?", bookID).Update("total_books", book.TotalBooks) //updates the book.TotalBooks-- in the table
+		tx.Commit()
+		result := db.Create(&student)
+		if result.Error != nil {
+			log.Fatalf("unable to create a table for students. %v", result.Error)
+		}
+		return int64(student.ID)
+	} else {
+
+		return 0
+	}
 }
 
 func UpdateStudent(w http.ResponseWriter, r *http.Request) {
