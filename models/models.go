@@ -10,6 +10,7 @@ type Book struct {
 	AuthorId    int
 	Description string
 	PublishedAt string
+	TotalBooks  int
 }
 
 type Student struct {

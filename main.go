@@ -14,7 +14,7 @@ func main() {
 
 	var students []models.Student
 	var id int64
-	id = 1
+	id = 2
 	db.Where("book_id = ?", id).Find(&students)
 
 	for _, student := range students {

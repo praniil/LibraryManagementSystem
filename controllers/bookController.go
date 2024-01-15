@@ -45,7 +45,11 @@ func CreateBook(w http.ResponseWriter, r *http.Request) {
 
 func insertBook(book models.Book) int64 {
 	db := database.Database_connection()
-	db.AutoMigrate(&models.Book{}, &models.Student{})
+	if exists := db.Migrator().HasTable(&models.Book{}); exists {
+		fmt.Println("Table books exists")
+	} else {
+		db.AutoMigrate(&models.Book{}, &models.Student{})
+	}
 	result := db.Create(&book)
 	if result.Error != nil {
 		panic(fmt.Sprintf("Failed to execute the query: %v", result.Error))
@@ -122,35 +126,41 @@ func getAllBooks() ([]models.Book, error) {
 }
 
 func UpdateBook(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-type", "application/x-www-form-urlencoded")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "PUT")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	var book models.Book
-	err := json.NewDecoder(r.Body).Decode(&book)
-	if err != nil {
-		log.Fatalf("Unable to decode request body. %v", err)
-	}
+	params := mux.Vars(r)
 
-	updatedRow := updateBook(int64(book.ID), book)
-	msg := fmt.Sprintf("Book updated successfully. Total rows affected: %v", updatedRow)
+	id, err := strconv.Atoi(params["id"]) //{id} extract
+	if err != nil {
+		log.Fatalf("couldnot extract id from the url, %v", err)
+	}
+	var book models.Book
+	json.NewDecoder(r.Body).Decode(&book)
+
+	rowsUpdated := updatebook(book, int64(id))
+	msg := fmt.Sprintf("number of rows updated: %d", rowsUpdated)
 	res := Response{
-		ID:      int64(book.ID),
+		ID:      int64(id),
 		Message: msg,
 	}
 	json.NewEncoder(w).Encode(res)
+
 }
 
-func updateBook(id int64, book models.Book) int64 {
+func updatebook(book models.Book, id int64) int64 {
 	db := database.Database_connection()
-
-	result := db.Model(&models.Book{}).Where("id = ?", id).Updates(book) //db operations done in models.Book where id = mentioned
-	if result.Error != nil {
-		log.Fatalf("unable to update books: %v", result.Error)
+	result := db.Model(&models.Book{}).Where("id = ?", id).Updates(book)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		fmt.Printf("Record not found with id: %d", id)
 	}
-	affectedRows := result.RowsAffected
-	return affectedRows
+	if result.Error != nil {
+		log.Fatalf("unable to update the record . %v", result.Error)
+	}
+	rowsUpdated := result.RowsAffected
+	return rowsUpdated
+
 }
 
 func DeleteBook(w http.ResponseWriter, r *http.Request) {
@@ -177,7 +187,7 @@ func DeleteBook(w http.ResponseWriter, r *http.Request) {
 func deleteRow(id int64) int64 {
 	db := database.Database_connection()
 
-	result := db.Delete(&models.Book{}, id)
+	result := db.Delete(&models.Book{}, id) //soft deletion for hard deletion := db.Unscoped().delete()
 	if result.Error != nil {
 		log.Fatalf("failed to delete the book info")
 	}
