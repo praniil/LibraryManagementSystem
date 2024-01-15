@@ -1,18 +1,21 @@
 package models
 
+import (
+	"gorm.io/gorm"
+)
+
 type Book struct {
-	ID          int64
+	gorm.Model
 	Title       string
 	AuthorId    int
 	Description string
 	PublishedAt string
-	Students    []Student
 }
 
 type Student struct {
-	ID           int64
+	gorm.Model
 	FullName     string
-	CampusRollNo int64
+	CampusRollNo string
 	DateBorrowed string
 	BookId       int64
 	Book         Book

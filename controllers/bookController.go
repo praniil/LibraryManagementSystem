@@ -45,7 +45,7 @@ func CreateBook(w http.ResponseWriter, r *http.Request) {
 
 func insertBook(book models.Book) int64 {
 	db := database.Database_connection()
-	db.AutoMigrate(&models.Book{})
+	db.AutoMigrate(&models.Book{}, &models.Student{})
 	result := db.Create(&book)
 	if result.Error != nil {
 		panic(fmt.Sprintf("Failed to execute the query: %v", result.Error))
@@ -133,10 +133,10 @@ func UpdateBook(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Unable to decode request body. %v", err)
 	}
 
-	updatedRow := updateBook(book.ID, book)
+	updatedRow := updateBook(int64(book.ID), book)
 	msg := fmt.Sprintf("Book updated successfully. Total rows affected: %v", updatedRow)
 	res := Response{
-		ID:      book.ID,
+		ID:      int64(book.ID),
 		Message: msg,
 	}
 	json.NewEncoder(w).Encode(res)
