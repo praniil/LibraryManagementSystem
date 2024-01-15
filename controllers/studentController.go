@@ -105,3 +105,32 @@ func updateStudent(student models.Student, id int64) int64 {
 	return rowsUpdated
 
 }
+
+func DeleteStudent(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "PUT")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		log.Fatalf("couldnt extract id from the url. %v", err)
+	}
+
+	deletedId := deleteStudent(int64(id))
+	res := Response{
+		ID:      deletedId,
+		Message: "this row is deleted",
+	}
+	json.NewEncoder(w).Encode(res)
+}
+
+func deleteStudent(id int64) int64 {
+	db := database.Database_connection()
+	result := db.Delete(&models.Book{}, id)
+	if result.Error != nil {
+		log.Fatalf("couldnt delete the row %v", result.Error)
+	}
+	rowsDeleted := result.RowsAffected
+	return rowsDeleted
+}
