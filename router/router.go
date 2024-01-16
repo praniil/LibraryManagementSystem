@@ -13,6 +13,8 @@ func Router() *mux.Router {
 	router.HandleFunc("/api/books/updatebook/{id}", controllers.UpdateBook).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/api/books/deletebook/{id}", controllers.DeleteBook).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/api/students/newstudent", controllers.CreateStudent).Methods("POST", "OPTIONS")
+	router.HandleFunc("/api/students/getstudent/{id}", controllers.GetStudent).Methods("GET", "OPTIONS")
 	router.HandleFunc("/api/students/updatestudent/{id}", controllers.UpdateStudent).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/api/students/deletestudent/{id}", controllers.DeleteStudent).Methods("PUT", "OPTIONS")
 	return router
 }
