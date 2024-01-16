@@ -47,6 +47,7 @@ func insertStudent(student models.Student, bookID int64) int64 {
 	} else {
 		db.AutoMigrate(&models.Book{}, &models.Student{})
 	}
+	// db.AutoMigrate(&models.Book{}, &models.Student{})
 	var book models.Book
 	findBook := db.Find(&book, bookID)
 	if findBook.Error != nil {
@@ -56,11 +57,13 @@ func insertStudent(student models.Student, bookID int64) int64 {
 		book.TotalBooks = book.TotalBooks - 1
 		tx := db.Begin()
 		tx.Model(&models.Book{}).Where("id = ?", bookID).Update("total_books", book.TotalBooks) //updates the book.TotalBooks-- in the table
-		tx.Commit()
 		result := db.Create(&student)
 		if result.Error != nil {
 			log.Fatalf("unable to create a table for students. %v", result.Error)
 		}
+		book.StudentIds = append(book.StudentIds, int64(student.ID))
+		tx.Model(&models.Book{}).Where("id = ?", bookID).Update("student_ids", book.StudentIds)
+		tx.Commit()
 		return int64(student.ID)
 	} else {
 

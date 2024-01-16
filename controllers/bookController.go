@@ -50,6 +50,7 @@ func insertBook(book models.Book) int64 {
 	} else {
 		db.AutoMigrate(&models.Book{}, &models.Student{})
 	}
+	// db.AutoMigrate(&models.Book{}, &models.Student{})
 	result := db.Create(&book)
 	if result.Error != nil {
 		panic(fmt.Sprintf("Failed to execute the query: %v", result.Error))
