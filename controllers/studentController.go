@@ -71,6 +71,39 @@ func insertStudent(student models.Student, bookID int64) int64 {
 	}
 }
 
+func GetStudent(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		log.Fatalf("unable to extract id from the url. %v", err)
+	}
+
+	student, err := getStudent(int64(id))
+	if err != nil {
+		fmt.Println("unable to get the student")
+	}
+	json.NewEncoder(w).Encode(student)
+}
+
+func getStudent(id int64) (models.Student, error) {
+	db := database.Database_connection()
+	var student models.Student
+	result := db.First(&student, id)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		fmt.Printf("couldnt find the record with %d, %v", id, result.Error)
+		return student, result.Error
+	}
+	if result.Error != nil {
+		fmt.Printf("couldnt get the record with id : %d, error: %v", id, result.Error)
+		return student, result.Error
+	}
+	return student, nil
+}
+
 func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "PUT")
