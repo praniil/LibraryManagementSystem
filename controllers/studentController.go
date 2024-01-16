@@ -103,6 +103,31 @@ func getStudent(id int64) (models.Student, error) {
 	}
 	return student, nil
 }
+func GetAllStudents(w http.ResponseWriter, r *http.Request) {
+	//r *http.Request http.Request struct contains information about an incomming HTTP request from a client, using a pointer to this struct allows the function to access and modify the req data
+	//its like func insert(node *Node)
+	w.Header().Set("Content-type", "application/x-www-form-urlencoded")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET")
+
+	students, err := getAllStudents()
+	if err != nil {
+		log.Fatalf("unable to find students. %v", err)
+	}
+
+	json.NewEncoder(w).Encode(students)
+}
+
+func getAllStudents() ([]models.Student, error) {
+	db := database.Database_connection()
+	var students []models.Student //{arrays of information of different students}
+	result := db.Find(&students)  //retrieves all the information from models.Student table
+
+	if result.Error != nil {
+		log.Fatalf("unable to find students. %v", result.Error)
+	}
+	return students, nil
+}
 
 func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-origin", "*")
