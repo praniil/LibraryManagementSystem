@@ -25,8 +25,8 @@ func CreateStudent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("failed to decode json format to the original format. %v", err)
 	}
-	bookId := student.BookId
-	studentId := insertStudent(student, bookId)
+	bookTitle := student.BookTitle
+	studentId := insertStudent(student, bookTitle)
 	var msg string
 	if studentId == 0 {
 		msg = "Student not created"
@@ -40,7 +40,7 @@ func CreateStudent(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-func insertStudent(student models.Student, bookID int64) int64 {
+func insertStudent(student models.Student, bookTitle string) int64 {
 	db := database.Database_connection()
 	if exists := db.Migrator().HasTable(&models.Book{}); exists {
 		fmt.Println("Table books exists")
@@ -49,23 +49,26 @@ func insertStudent(student models.Student, bookID int64) int64 {
 	}
 	// db.AutoMigrate(&models.Book{}, &models.Student{})
 	var book models.Book
-	findBook := db.Find(&book, bookID)
+	findBook := db.Find(&book, bookTitle)
 	if findBook.Error != nil {
 		fmt.Println("couldnt find a book with given bookid")
 	}
-	if book.TotalBooks > 0 {
-		book.TotalBooks = book.TotalBooks - 1
-		tx := db.Begin()
-		tx.Model(&models.Book{}).Where("id = ?", bookID).Update("total_books", book.TotalBooks) //updates the book.TotalBooks-- in the table
-		result := db.Create(&student)
-		if result.Error != nil {
-			log.Fatalf("unable to create a table for students. %v", result.Error)
-		}
-		book.StudentIds = append(book.StudentIds, int64(student.ID))
-		tx.Model(&models.Book{}).Where("id = ?", bookID).Update("student_ids", book.StudentIds)
-		tx.Commit()
-		return int64(student.ID)
-	} else {
+	// if book.TotalBooks > 0 {
+	// 	book.TotalBooks = book.TotalBooks - 1
+	// 	tx := db.Begin()
+	// 	tx.Model(&models.Book{}).Where("id = ?", bookID).Update("total_books", book.TotalBooks) //updates the book.TotalBooks-- in the table
+	// 	result := db.Create(&student)
+	// 	if result.Error != nil {
+	// 		log.Fatalf("unable to create a table for students. %v", result.Error)
+	// 	}
+	// 	book.StudentIds = append(book.StudentIds, int64(student.ID))
+	// 	tx.Model(&models.Book{}).Where("id = ?", bookID).Update("student_ids", book.StudentIds)
+	// 	tx.Commit()
+	// 	return int64(student.ID)
+	// } 
+	if {
+
+	}	else {
 
 		return 0
 	}

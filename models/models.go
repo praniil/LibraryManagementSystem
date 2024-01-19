@@ -1,18 +1,18 @@
 package models
 
 import (
-	pq "github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
 type Book struct {
 	gorm.Model
-	Title       string
-	AuthorId    int
-	Description string
-	PublishedAt string
-	TotalBooks  int
-	StudentIds  pq.Int64Array `gorm:"type:bigInt[]"`
+	Title            string
+	AuthorId         int
+	Description      string
+	PublishedAt      string
+	TotalBooks       int
+	StudentId        int
+	StudentsFullName string
 }
 
 type Student struct {
@@ -20,6 +20,6 @@ type Student struct {
 	FullName     string
 	CampusRollNo string
 	DateBorrowed string
-	BookId       int64
+	BookTitle    string
 	Book         Book
 }
