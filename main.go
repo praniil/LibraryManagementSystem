@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"libraryManagementSystem/database"
-	"libraryManagementSystem/models"
+	// "libraryManagementSystem/models"
 	"libraryManagementSystem/router"
 	"log"
 	"net/http"
@@ -12,14 +12,14 @@ import (
 func main() {
 	db := database.Database_connection()
 
-	var students []models.Student
-	var id int64
-	id = 2
-	db.Where("book_id = ?", id).Find(&students)
+	// var students []models.StudentInfo
+	// var id int64
+	// id = 2
+	// db.Where("book_id = ?", id).Find(&students)
 
-	for _, student := range students {
-		fmt.Printf("Students ID: %d, Name: %s \n", student.ID, student.FullName)
-	}
+	// for _, student := range students {
+	// 	fmt.Printf("Students ID: %d, Name: %s \n", student.ID, student.FullName)
+	// }
 	fmt.Println("connected to the databse")
 	defer func() {
 		sqlDB, err := db.DB()

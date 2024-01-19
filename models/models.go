@@ -4,22 +4,21 @@ import (
 	"gorm.io/gorm"
 )
 
-type Book struct {
+type BookInfo struct {
 	gorm.Model
 	Title            string
 	AuthorId         int
 	Description      string
 	PublishedAt      string
-	TotalBooks       int
 	StudentId        int
 	StudentsFullName string
 }
 
-type Student struct {
+type StudentInfo struct {
 	gorm.Model
 	FullName     string
 	CampusRollNo string
 	DateBorrowed string
 	BookTitle    string
-	Book         Book
+	Book         BookInfo `gorm:"foreignKey:BookTitle"`
 }
