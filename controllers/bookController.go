@@ -45,10 +45,10 @@ func CreateBook(w http.ResponseWriter, r *http.Request) {
 
 func insertBook(book models.BookInfo) int64 {
 	db := database.Database_connection()
-	// if exists := db.Migrator().HasTable(&models.Book{}); exists {
+	// if exists := db.Migrator().HasTable(&models.BookInfo{}); exists {
 	// 	fmt.Println("Table books exists")
 	// } else {
-	// 	db.AutoMigrate(&models.Book{}, &models.Student{})
+	// 	db.AutoMigrate(&models.BookInfo{}, &models.StudentInfo{})
 	// }
 	db.AutoMigrate(&models.BookInfo{}, &models.StudentInfo{})
 	result := db.Create(&book)
