@@ -25,7 +25,7 @@ func CreateStudent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("failed to decode json format to the original format. %v", err)
 	}
-	bookTitle := student.BookTitle
+	bookTitle := student.BooksTitle
 	studentId := insertStudent(student, bookTitle)
 	var msg string
 	if studentId == 0 {
@@ -42,44 +42,45 @@ func CreateStudent(w http.ResponseWriter, r *http.Request) {
 
 func insertStudent(student models.StudentInfo, bookTitle string) int64 {
 	db := database.Database_connection()
-	// if exists := db.Migrator().HasTable(&models.Book{}); exists {
+	// if exists := db.Migrator().HasTable(&models.BookInfo{}); exists {
 	// 	fmt.Println("Table books exists")
 	// } else {
-	// 	db.AutoMigrate(&models.Book{}, &models.Student{})
+	// 	db.AutoMigrate(&models.BookInfo{}, &models.StudentInfo{})
 	// }
 	db.AutoMigrate(&models.BookInfo{}, &models.StudentInfo{})
 	var book models.BookInfo
-	findBook := db.Find(&book, bookTitle)
-	if findBook.Error != nil {
-		fmt.Println("couldnt find a book with given booktitle")
-	}
-	// if book.TotalBooks > 0 {
-	// 	book.TotalBooks = book.TotalBooks - 1
-	// 	tx := db.Begin()
-	// 	tx.Model(&models.Book{}).Where("id = ?", bookID).Update("total_books", book.TotalBooks) //updates the book.TotalBooks-- in the table
-	// 	result := db.Create(&student)
-	// 	if result.Error != nil {
-	// 		log.Fatalf("unable to create a table for students. %v", result.Error)
-	// 	}
-	// 	book.StudentIds = append(book.StudentIds, int64(student.ID))
-	// 	tx.Model(&models.Book{}).Where("id = ?", bookID).Update("student_ids", book.StudentIds)
-	// 	tx.Commit()
-	// 	return int64(student.ID)
-	// }
 	tx := db.Begin()
-	tx.Model(&models.BookInfo{}).Where("title = ? AND student_id = ?", "University Physics", "").Find(&book)
-	result := db.Create(&student)
+
+	// var book models.BookInfo
+
+	// Find the book by title and student_id
+	tx.Model(&models.BookInfo{}).Where("title = ? AND students_id = ?", student.BooksTitle, 0).Find(&book)
+
+	if book.ID == 0 {
+		tx.Rollback()
+		log.Fatalf("Book not found for title: %s and students_id: %d", student.BooksTitle, 0)
+	}
+
+	result := tx.Create(&student)
+
 	if result.Error != nil {
-		log.Fatalf("unable to create a table for students. %v", result.Error)
+		tx.Rollback()
+		log.Fatalf("Unable to create a record for students. %v", result.Error)
 	}
-	book.StudentId = int(student.ID)
+	// Update the book with student information
+	book.StudentsId = int(student.ID)
 	book.StudentsFullName = student.FullName
-	updateData := map[string]interface{}{
-		"student_id":         book.StudentId,
-		"students_full_name": book.StudentsFullName,
-	}
-	tx.Model(&models.BookInfo{}).Where("id = ?", book.ID).Updates(updateData)
+
+	// Update the BookInfo table with the modified book information
+	tx.Exec("UPDATE book_infos SET students_id = ?, students_full_name = ? WHERE id = ?", book.StudentsId, book.StudentsFullName, book.ID)
+
+	// Create the student record
+
+	tx.Commit()
+
 	return int64(student.ID)
+
+	// return int64(student.ID)
 
 }
 
