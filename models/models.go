@@ -10,7 +10,7 @@ type BookInfo struct {
 	AuthorId         int
 	Description      string
 	PublishedAt      string
-	StudentId        int
+	StudentsId       int
 	StudentsFullName string
 }
 
@@ -19,6 +19,6 @@ type StudentInfo struct {
 	FullName     string
 	CampusRollNo string
 	DateBorrowed string
-	BookTitle    string
-	Book         BookInfo `gorm:"foreignKey:BookTitle"`
+	BooksTitle   string
+	Book         BookInfo `gorm:"foreignKey:BooksTitle;references:Title"`
 }
