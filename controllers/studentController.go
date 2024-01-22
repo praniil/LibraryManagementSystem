@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
@@ -20,13 +21,13 @@ func CreateStudent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	var student models.StudentInfo
+	var student models.StudentInformation
 	err := json.NewDecoder(r.Body).Decode(&student)
 	if err != nil {
 		log.Fatalf("failed to decode json format to the original format. %v", err)
 	}
-	bookTitle := student.BooksTitle
-	studentId := insertStudent(student, bookTitle)
+	bookId := student.BooksId
+	studentId := insertStudent(student, bookId)
 	var msg string
 	if studentId == 0 {
 		msg = "Student not created"
@@ -40,25 +41,22 @@ func CreateStudent(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-func insertStudent(student models.StudentInfo, bookTitle string) int64 {
+func insertStudent(student models.StudentInformation, bookId int) int64 {
 	db := database.Database_connection()
 	// if exists := db.Migrator().HasTable(&models.BookInfo{}); exists {
 	// 	fmt.Println("Table books exists")
 	// } else {
 	// 	db.AutoMigrate(&models.BookInfo{}, &models.StudentInfo{})
 	// }
-	db.AutoMigrate(&models.BookInfo{}, &models.StudentInfo{})
-	var book models.BookInfo
+	db.AutoMigrate(&models.BookInformation{}, &models.StudentInformation{}, &models.LoanInformation{})
+	var book models.BookInformation
 	tx := db.Begin()
 
-	// var book models.BookInfo
+	tx.Model(&models.BookInformation{}).Where("id = ? AND students_id = ?", bookId, 0).Find(&book)
 
-	// Find the book by title and student_id
-	tx.Model(&models.BookInfo{}).Where("title = ? AND students_id = ?", student.BooksTitle, 0).Find(&book)
-
-	if book.ID == 0 {
+	if book.ID == 0 { //no book found with title given by student and the book is not available
 		tx.Rollback()
-		log.Fatalf("Book not found for title: %s and students_id: %d", student.BooksTitle, 0)
+		log.Fatalf("Book not found for title: %d and students_id: %d", student.BooksId, 0)
 	}
 
 	result := tx.Create(&student)
@@ -67,20 +65,32 @@ func insertStudent(student models.StudentInfo, bookTitle string) int64 {
 		tx.Rollback()
 		log.Fatalf("Unable to create a record for students. %v", result.Error)
 	}
-	// Update the book with student information
+
 	book.StudentsId = int(student.ID)
 	book.StudentsFullName = student.FullName
 
-	// Update the BookInfo table with the modified book information
-	tx.Exec("UPDATE book_infos SET students_id = ?, students_full_name = ? WHERE id = ?", book.StudentsId, book.StudentsFullName, book.ID)
+	tx.Model(&models.BookInformation{}).Where("id =?", book.ID).Updates(&book)
 
-	// Create the student record
+	var loanDuration time.Duration
+	loanDuration = 2 * 7 * 24 * time.Hour
+	dueDate := time.Now().Add(loanDuration)
+	remainingTime := dueDate.Sub(time.Now())
+	loanInfos := models.LoanInformation{
+		BookID:        int64(book.ID),
+		StudentsID:    int64(student.ID),
+		DueDate:       dueDate,
+		RemainingTime: remainingTime,
+		Fine:          0,
+		Returned:      false,
+	}
+	result = tx.Create(&loanInfos)
 
+	if result.Error != nil {
+		tx.Rollback()
+		log.Fatalf("Unable to create a loan record. %v", result.Error)
+	}
 	tx.Commit()
-
 	return int64(student.ID)
-
-	// return int64(student.ID)
 
 }
 
@@ -102,9 +112,9 @@ func GetStudent(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(student)
 }
 
-func getStudent(id int64) (models.StudentInfo, error) {
+func getStudent(id int64) (models.StudentInformation, error) {
 	db := database.Database_connection()
-	var student models.StudentInfo
+	var student models.StudentInformation
 	result := db.First(&student, id)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		fmt.Printf("couldnt find the record with %d, %v", id, result.Error)
@@ -131,10 +141,10 @@ func GetAllStudents(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(students)
 }
 
-func getAllStudents() ([]models.StudentInfo, error) {
+func getAllStudents() ([]models.StudentInformation, error) {
 	db := database.Database_connection()
-	var students []models.StudentInfo //{arrays of information of different students}
-	result := db.Find(&students)      //retrieves all the information from models.Student table
+	var students []models.StudentInformation //{arrays of information of different students}
+	result := db.Find(&students)             //retrieves all the information from models.Student table
 
 	if result.Error != nil {
 		log.Fatalf("unable to find students. %v", result.Error)
@@ -153,7 +163,7 @@ func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("couldnot extract id from the url, %v", err)
 	}
-	var student models.StudentInfo
+	var student models.StudentInformation
 	json.NewDecoder(r.Body).Decode(&student)
 
 	rowsUpdated := updateStudent(student, int64(id))
@@ -166,9 +176,9 @@ func UpdateStudent(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func updateStudent(student models.StudentInfo, id int64) int64 {
+func updateStudent(student models.StudentInformation, id int64) int64 {
 	db := database.Database_connection()
-	result := db.Model(&models.StudentInfo{}).Where("id = ?", id).Updates(student)
+	result := db.Model(&models.StudentInformation{}).Where("id = ?", id).Updates(student)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		fmt.Printf("Record not found with id: %d", id)
 	}
@@ -201,7 +211,7 @@ func DeleteStudent(w http.ResponseWriter, r *http.Request) {
 
 func deleteStudent(id int64) int64 {
 	db := database.Database_connection()
-	result := db.Delete(&models.BookInfo{}, id)
+	result := db.Delete(&models.BookInformation{}, id)
 	if result.Error != nil {
 		log.Fatalf("couldnt delete the row %v", result.Error)
 	}
