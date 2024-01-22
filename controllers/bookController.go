@@ -25,7 +25,7 @@ func CreateBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	var book models.BookInfo
+	var book models.BookInformation
 	err := json.NewDecoder(r.Body).Decode(&book)
 	//.Decode(&book) ==> decoded data into book
 
@@ -43,14 +43,14 @@ func CreateBook(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func insertBook(book models.BookInfo) int64 {
+func insertBook(book models.BookInformation) int64 {
 	db := database.Database_connection()
 	// if exists := db.Migrator().HasTable(&models.BookInfo{}); exists {
 	// 	fmt.Println("Table books exists")
 	// } else {
 	// 	db.AutoMigrate(&models.BookInfo{}, &models.StudentInfo{})
 	// }
-	db.AutoMigrate(&models.BookInfo{}, &models.StudentInfo{})
+	db.AutoMigrate(&models.BookInformation{}, &models.StudentInformation{}, &models.LoanInformation{})
 	result := db.Create(&book)
 	if result.Error != nil {
 		panic(fmt.Sprintf("Failed to execute the query: %v", result.Error))
@@ -81,10 +81,10 @@ func GetBook(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(book)
 }
 
-func getBook(id int64) (models.BookInfo, error) {
+func getBook(id int64) (models.BookInformation, error) {
 	db := database.Database_connection()
 
-	var book models.BookInfo
+	var book models.BookInformation
 	result := db.First(&book, id) //db.first returns first record that matches the condition and returns to &book
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		fmt.Println("no rows were returned")
@@ -115,10 +115,10 @@ func GetAllBook(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(books)
 }
 
-func getAllBooks() ([]models.BookInfo, error) {
+func getAllBooks() ([]models.BookInformation, error) {
 	db := database.Database_connection()
-	var books []models.BookInfo //{arrays of information of different books}
-	result := db.Find(&books)   //retrieves all the information from models.Book table
+	var books []models.BookInformation //{arrays of information of different books}
+	result := db.Find(&books)          //retrieves all the information from models.Book table
 
 	if result.Error != nil {
 		log.Fatalf("unable to find books. %v", result.Error)
@@ -137,7 +137,7 @@ func UpdateBook(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("couldnot extract id from the url, %v", err)
 	}
-	var book models.BookInfo
+	var book models.BookInformation
 	json.NewDecoder(r.Body).Decode(&book)
 
 	rowsUpdated := updatebook(book, int64(id))
@@ -150,9 +150,9 @@ func UpdateBook(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func updatebook(book models.BookInfo, id int64) int64 {
+func updatebook(book models.BookInformation, id int64) int64 {
 	db := database.Database_connection()
-	result := db.Model(&models.BookInfo{}).Where("id = ?", id).Updates(book)
+	result := db.Model(&models.BookInformation{}).Where("id = ?", id).Updates(book)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		fmt.Printf("Record not found with id: %d", id)
 	}
@@ -188,7 +188,7 @@ func DeleteBook(w http.ResponseWriter, r *http.Request) {
 func deleteRow(id int64) int64 {
 	db := database.Database_connection()
 
-	result := db.Delete(&models.BookInfo{}, id) //soft deletion for hard deletion := db.Unscoped().delete()
+	result := db.Delete(&models.BookInformation{}, id) //soft deletion for hard deletion := db.Unscoped().delete()
 	if result.Error != nil {
 		log.Fatalf("failed to delete the book info")
 	}
