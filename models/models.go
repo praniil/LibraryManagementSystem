@@ -1,10 +1,12 @@
 package models
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
-type BookInfo struct {
+type BookInformation struct {
 	gorm.Model
 	Title            string
 	AuthorId         int
@@ -14,11 +16,23 @@ type BookInfo struct {
 	StudentsFullName string
 }
 
-type StudentInfo struct {
+type StudentInformation struct {
 	gorm.Model
 	FullName     string
 	CampusRollNo string
 	DateBorrowed string
-	BooksTitle   string
-	Book         BookInfo `gorm:"foreignKey:BooksTitle;references:Title"`
+	BooksId      int
+	Book         BookInformation `gorm:"foreignKey:BooksId"`
+}
+
+type LoanInformation struct {
+	gorm.Model
+	BookID        int64
+	StudentsID    int64
+	DueDate       time.Time
+	RemainingTime time.Duration
+	Fine          int64
+	Returned      bool
+	Book          BookInformation    `gorm:"foreignKey:BookID"`
+	Student       StudentInformation `gorm:"foreignKey:StudentsID"`
 }
