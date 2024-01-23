@@ -17,5 +17,6 @@ func Router() *mux.Router {
 	router.HandleFunc("/api/students/getallstudents", controllers.GetAllStudents).Methods("GET", "OPTIONS")
 	router.HandleFunc("/api/students/updatestudent/{id}", controllers.UpdateStudent).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/api/students/deletestudent/{id}", controllers.DeleteStudent).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/api/loans/returnbook", controllers.ReturnBook).Methods("POST", "OPTIONS")
 	return router
 }
