@@ -263,6 +263,36 @@ func ReturnBook(loanID uint) {
 
 //its the idea but we make a new api for this shit
 
-func ReturnBook (w http.ResponseWriter, r *http.Request) {
-	
+func ReturnBook(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
+	w.Header().Set("Access-Control-Allow-origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	var student models.StudentInformation
+	err := json.NewDecoder(r.Body).Decode(&student)
+	if err != nil {
+		fmt.Printf("couldnt convert the json format to the original format, %v", err)
+	}
+
+	loanID := returnBook(student, student.BooksId)
+	msg := fmt.Sprintf("The book is returned and the loan is cleared of id: %d", loanID)
+	res := Response{
+		ID:      loanID,
+		Message: msg,
+	}
+	json.NewEncoder(w).Encode(res)
+}
+
+func returnBook(student models.StudentInformation, bookId int) int64 {
+	db := database.Database_connection()
+	var loan models.LoanInformation
+	result := db.Find(&loan, bookId)
+	if result.Error != nil {
+		fmt.Printf("couldnot find the loan information with bookid:%d error: %v", bookId, result.Error)
+	}
+	loan.RemainingTime = 0
+	loan.Returned = true
+	db.Model(&loan).Where("book_id =?", bookId).Updates(loan)
+	return int64(loan.ID)
 }
