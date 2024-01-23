@@ -84,11 +84,22 @@ func insertStudent(student models.StudentInformation, bookId int) int64 {
 		Returned:      false,
 	}
 	result = tx.Create(&loanInfos)
-
 	if result.Error != nil {
 		tx.Rollback()
 		log.Fatalf("Unable to create a loan record. %v", result.Error)
 	}
+	var loans []models.LoanInformation
+	resultUpdateLoan := tx.Find(&loans)
+	if resultUpdateLoan.Error != nil {
+		fmt.Printf("error finding the loans information. %v", resultUpdateLoan.Error)
+	}
+	for i := range loans {
+		loans[i].RemainingTime = loans[i].DueDate.Sub(time.Now())
+		if loans[i].RemainingTime < 0 {
+			loans[i].RemainingTime = 0
+		}
+	}
+	tx.Save(&loans)
 	tx.Commit()
 	return int64(student.ID)
 
@@ -217,4 +228,41 @@ func deleteStudent(id int64) int64 {
 	}
 	rowsDeleted := result.RowsAffected
 	return rowsDeleted
+}
+
+//create a way to return book
+/*
+func ReturnBook(loanID uint) {
+    var loan models.Loan
+    db.First(&loan, loanID)
+
+    if loan.ID == 0 {
+        fmt.Println("Loan not found")
+        return
+    }
+
+    if loan.Returned {
+        fmt.Println("Book has already been returned")
+        return
+    }
+
+    // Calculate the days overdue
+    daysOverdue := int(math.Max(0, time.Since(loan.DueDate).Hours()/24))
+
+    // Calculate the fine
+    fineAmount := finePerDay * float64(daysOverdue)
+
+    // Update the loan information
+    loan.Returned = true
+    loan.Fine = fineAmount
+    db.Save(&loan)
+
+    fmt.Printf("Book with ID %d returned. Fine amount: $%.2f\n", loan.BookID, fineAmount)
+}
+*/
+
+//its the idea but we make a new api for this shit
+
+func ReturnBook (w http.ResponseWriter, r *http.Request) {
+	
 }
