@@ -27,12 +27,13 @@ type StudentInformation struct {
 
 type LoanInformation struct {
 	gorm.Model
-	BookID        int64
-	StudentsID    int64
-	DueDate       time.Time
-	RemainingTime time.Duration
-	Fine          int64
-	Returned      bool
-	Book          BookInformation    `gorm:"foreignKey:BookID"`
-	Student       StudentInformation `gorm:"foreignKey:StudentsID"`
+	BookID           int64
+	StudentsID       int64
+	DueDate          time.Time
+	RemainingTime    time.Duration
+	Fine             int64
+	Returned         bool
+	StudentsFullName string
+	Book             BookInformation    `gorm:"foreignKey:BookID"`
+	Student          StudentInformation `gorm:"foreignKey:StudentsID"`
 }
