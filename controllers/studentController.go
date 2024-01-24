@@ -76,12 +76,13 @@ func insertStudent(student models.StudentInformation, bookId int) int64 {
 	dueDate := time.Now().Add(loanDuration)
 	remainingTime := dueDate.Sub(time.Now())
 	loanInfos := models.LoanInformation{
-		BookID:        int64(book.ID),
-		StudentsID:    int64(student.ID),
-		DueDate:       dueDate,
-		RemainingTime: remainingTime,
-		Fine:          0,
-		Returned:      false,
+		BookID:           int64(book.ID),
+		StudentsID:       int64(student.ID),
+		DueDate:          dueDate,
+		RemainingTime:    remainingTime,
+		Fine:             0,
+		Returned:         false,
+		StudentsFullName: student.FullName,
 	}
 	result = tx.Create(&loanInfos)
 	if result.Error != nil {
@@ -287,12 +288,19 @@ func ReturnBook(w http.ResponseWriter, r *http.Request) {
 func returnBook(student models.StudentInformation, bookId int) int64 {
 	db := database.Database_connection()
 	var loan models.LoanInformation
-	result := db.Find(&loan, bookId)
+	result := db.Where("book_id = ? AND students_full_name = ?", bookId, student.FullName).Find(&loan)
 	if result.Error != nil {
 		fmt.Printf("couldnot find the loan information with bookid:%d error: %v", bookId, result.Error)
 	}
 	loan.RemainingTime = 0
 	loan.Returned = true
-	db.Model(&loan).Where("book_id =?", bookId).Updates(loan)
+	// updatedFields := map[string]interface{}{
+	// 	"remaining_time": loan.RemainingTime,
+	// 	"returned":       loan.Returned,
+	// }
+	db.Model(&loan).Where("book_id =?", bookId).Update("remaining_time", loan.RemainingTime)
+	db.Model(&loan).Where("book_id =?", bookId).Update("returned", loan.Returned)
+	fmt.Println("loan id:", loan.ID)
+	fmt.Println("loan full name", loan.StudentsFullName)
 	return int64(loan.ID)
 }
